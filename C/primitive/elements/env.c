@@ -1,12 +1,12 @@
 #include <simplicity/elements/env.h>
 
-#include <stdlib.h>
 #include <stdalign.h>
 #include <string.h>
 #include "primitive.h"
 #include "ops.h"
 #include "../../sha256.h"
 #include "../../simplicity_assert.h"
+#include "../../simplicity_alloc.h"
 
 #define PADDING(alignType, allocated) ((alignof(alignType) - (allocated) % alignof(alignType)) % alignof(alignType))
 
@@ -335,7 +335,7 @@ extern transaction* elements_simplicity_mallocTransaction(const rawTransaction* 
   if (SIZE_MAX - allocationSize < totalNullDataCodes * sizeof(opcode)) return NULL;
   allocationSize += totalNullDataCodes * sizeof(opcode);
 
-  char *allocation = malloc(allocationSize);
+  char *allocation = simplicity_malloc(allocationSize, alignof(char));
   if (!allocation) return NULL;
 
   /* Casting through void* to avoid warning about pointer alignment.
@@ -525,7 +525,7 @@ extern tapEnv* elements_simplicity_mallocTapEnv(const rawTapEnv* rawEnv) {
     allocationSize += numMidstate * sizeof(sha256_midstate);
   }
 
-  char *allocation = malloc(allocationSize);
+  char *allocation = simplicity_malloc(allocationSize, alignof(char));
   if (!allocation) return NULL;
 
   /* Casting through void* to avoid warning about pointer alignment.
