@@ -363,8 +363,7 @@ rustJetDoc mod = layoutPretty layoutOptions $ vsep (map (<> line)
 
 rustFFIImports :: Doc a
 rustFFIImports = vsep (map (<> semi)
-  [ "use crate::ffi::c_void"
-  , "use crate::{CElementsTxEnv, CFrameItem}"
+  [ "use crate::{CElementsTxEnv, CFrameItem}"
   ])
 
 rustFFISigs :: Module -> Doc a
@@ -381,9 +380,9 @@ rustFFISigs mod = vsep
     ]
    where
     linkName = "#[link_name = \"c_"++cJetName jet++"\"]"
-    signature = "pub fn "++cJetName jet++"(dst: *mut CFrameItem, src: *const CFrameItem, env: *const "++envType++") -> bool"
-    envType | CoreModule <- jetModule jet = "c_void"
-            | ElementsModule <- jetModule jet = "CElementsTxEnv"
+    signature = "pub fn "++cJetName jet++"(dst: *mut CFrameItem, src: *const CFrameItem"++envArg++") -> bool"
+    envArg | CoreModule <- jetModule jet = ""
+           | ElementsModule <- jetModule jet = ", env: *const CElementsTxEnv"
 
 rustFFIDoc :: Module -> SimpleDocStream a
 rustFFIDoc mod = layoutPretty layoutOptions $ vsep (map (<> line)
@@ -404,7 +403,7 @@ rustWrappers mod = vsep ((<> line) . wrapper <$> moduleJets mod)
   wrapper (SomeArrow jet) = vsep
    [ nest 4 $ vsep
      [ pretty $ "pub fn "++cJetName jet++templateParam++"(dst: &mut CFrameItem, src: CFrameItem, "++envParam++") -> bool {"
-     , pretty $ "unsafe { "++lowerRustModuleName mod++"_ffi::"++cJetName jet++"(dst, &src, "++envArg++") }"
+     , pretty $ "unsafe { "++lowerRustModuleName mod++"_ffi::"++cJetName jet++"(dst, &src"++envArg++") }"
      ]
    , "}"
    ]
@@ -413,8 +412,8 @@ rustWrappers mod = vsep ((<> line) . wrapper <$> moduleJets mod)
                   | otherwise = ""
     envParam | CoreModule <- jetModule jet = "_env: &T"
              | ElementsModule <- jetModule jet = "env: &CElementsTxEnv"
-    envArg | CoreModule <- jetModule jet = "std::ptr::null()"
-           | ElementsModule <- jetModule jet = "env"
+    envArg | CoreModule <- jetModule jet = ""
+           | otherwise = ", env"
 
 rustWrapperDoc :: Module -> SimpleDocStream a
 rustWrapperDoc mod = layoutPretty layoutOptions $ vsep (map (<> line)
