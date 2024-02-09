@@ -298,11 +298,13 @@ static void copyOutput(sigOutput* result, opcode** allocation, size_t* allocatio
 }
 
 /* Allocate and initialize a 'transaction' from a 'rawOuput', copying or hashing the data as needed.
+ * Write the number of allocated bytes into a buffer.
  * Returns NULL if malloc fails (or if malloc cannot be called because we require an allocation larger than SIZE_MAX).
  *
  * Precondition: NULL != rawTx
+ *               NULL != allocatedSize
  */
-extern transaction* elements_simplicity_mallocTransaction(const rawTransaction* rawTx) {
+static inline transaction* elements_simplicity_mallocTransactionSize(const rawTransaction* rawTx, size_t* allocatedSize) {
   if (!rawTx) return NULL;
 
   size_t allocationSize = sizeof(transaction);
@@ -337,6 +339,9 @@ extern transaction* elements_simplicity_mallocTransaction(const rawTransaction* 
 
   char *allocation = simplicity_malloc(allocationSize, alignof(char));
   if (!allocation) return NULL;
+  if (allocatedSize) {
+    *allocatedSize = allocationSize;
+  };
 
   /* Casting through void* to avoid warning about pointer alignment.
    * Our padding is done carefully to ensure alignment.
@@ -502,12 +507,23 @@ extern transaction* elements_simplicity_mallocTransaction(const rawTransaction* 
   return tx;
 }
 
+/* Allocate and initialize a 'transaction' from a 'rawOuput', copying or hashing the data as needed.
+ * Returns NULL if malloc fails (or if malloc cannot be called because we require an allocation larger than SIZE_MAX).
+ *
+ * Precondition: NULL != rawTx
+ */
+extern transaction* elements_simplicity_mallocTransaction(const rawTransaction* rawTx) {
+    return elements_simplicity_mallocTransactionSize(rawTx, NULL);
+}
+
 /* Allocate and initialize a 'tapEnv' from a 'rawTapEnv', copying or hashing the data as needed.
+ * Write the number of allocated bytes into a buffer.
  * Returns NULL if malloc fails (or if malloc cannot be called because we require an allocation larger than SIZE_MAX).
  *
  * Precondition: *rawEnv is well-formed (i.e. rawEnv->pathLen <= 128.)
+ *               NULL != allocatedSize
  */
-extern tapEnv* elements_simplicity_mallocTapEnv(const rawTapEnv* rawEnv) {
+static inline tapEnv* elements_simplicity_mallocTapEnvSize(const rawTapEnv* rawEnv, size_t* allocatedSize) {
   if (!rawEnv) return NULL;
   if (128 < rawEnv->pathLen) return NULL;
 
@@ -527,6 +543,9 @@ extern tapEnv* elements_simplicity_mallocTapEnv(const rawTapEnv* rawEnv) {
 
   char *allocation = simplicity_malloc(allocationSize, alignof(char));
   if (!allocation) return NULL;
+  if (allocatedSize) {
+    *allocatedSize = allocationSize;
+  };
 
   /* Casting through void* to avoid warning about pointer alignment.
    * Our padding is done carefully to ensure alignment.
@@ -571,6 +590,15 @@ extern tapEnv* elements_simplicity_mallocTapEnv(const rawTapEnv* rawEnv) {
     sha256_finalize(&ctx);
   }
   return env;
+}
+
+/* Allocate and initialize a 'tapEnv' from a 'rawTapEnv', copying or hashing the data as needed.
+ * Returns NULL if malloc fails (or if malloc cannot be called because we require an allocation larger than SIZE_MAX).
+ *
+ * Precondition: *rawEnv is well-formed (i.e. rawEnv->pathLen <= 128.)
+ */
+extern tapEnv* elements_simplicity_mallocTapEnv(const rawTapEnv* rawEnv) {
+    return elements_simplicity_mallocTapEnvSize(rawEnv, NULL);
 }
 
 /* Contstruct a txEnv structure from its components.
